@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  product: one
+  price: MyString
+  qty: MyString
+  last_total: 9.99
+  in_out: MyString
+  type: 
+
+two:
+  product: two
+  price: MyString
+  qty: MyString
+  last_total: 9.99
+  in_out: MyString
+  type: 

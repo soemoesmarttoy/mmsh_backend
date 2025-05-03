@@ -1,0 +1,18 @@
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/racc-1.8.1/ext/racc/cparse
+/usr/bin/ruby extconf.rb
+creating Makefile
+
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/racc-1.8.1/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20250425-11409-xbee9u sitelibdir\=./.gem.20250425-11409-xbee9u clean
+
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/racc-1.8.1/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20250425-11409-xbee9u sitelibdir\=./.gem.20250425-11409-xbee9u
+compiling cparse.c
+linking shared-object racc/cparse.so
+
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/racc-1.8.1/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20250425-11409-xbee9u sitelibdir\=./.gem.20250425-11409-xbee9u install
+/usr/bin/install -c -m 0755 cparse.so ./.gem.20250425-11409-xbee9u/racc
+
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/racc-1.8.1/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20250425-11409-xbee9u sitelibdir\=./.gem.20250425-11409-xbee9u clean

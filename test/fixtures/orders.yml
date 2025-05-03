@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  order_type: MyString
+  customers: one
+  in_out: MyString
+  total_amount: MyString
+  orders: one
+
+two:
+  order_type: MyString
+  customers: two
+  in_out: MyString
+  total_amount: MyString
+  orders: two

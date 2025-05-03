@@ -1,0 +1,31 @@
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/psych-5.2.3/ext/psych
+/usr/bin/ruby extconf.rb
+checking for pkg-config for yaml-0.1... [" ", "", "-lyaml"]
+checking for yaml.h... yes
+checking for yaml_get_version() in -lyaml... yes
+creating Makefile
+
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/psych-5.2.3/ext/psych
+make DESTDIR\= sitearchdir\=./.gem.20250425-11409-ln9kjs sitelibdir\=./.gem.20250425-11409-ln9kjs clean
+cd libyaml && make clean
+/bin/sh: line 1: cd: libyaml: No such file or directory
+make: [Makefile:283: clean-so] Error 1 (ignored)
+
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/psych-5.2.3/ext/psych
+make DESTDIR\= sitearchdir\=./.gem.20250425-11409-ln9kjs sitelibdir\=./.gem.20250425-11409-ln9kjs
+compiling psych.c
+compiling psych_emitter.c
+compiling psych_parser.c
+compiling psych_to_ruby.c
+compiling psych_yaml_tree.c
+linking shared-object psych.so
+
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/psych-5.2.3/ext/psych
+make DESTDIR\= sitearchdir\=./.gem.20250425-11409-ln9kjs sitelibdir\=./.gem.20250425-11409-ln9kjs install
+/usr/bin/install -c -m 0755 psych.so ./.gem.20250425-11409-ln9kjs
+
+current directory: /home/soemoethein/mmsh_backend/vendor/bundle/ruby/3.3.0/gems/psych-5.2.3/ext/psych
+make DESTDIR\= sitearchdir\=./.gem.20250425-11409-ln9kjs sitelibdir\=./.gem.20250425-11409-ln9kjs clean
+cd libyaml && make clean
+/bin/sh: line 1: cd: libyaml: No such file or directory
+make: [Makefile:283: clean-so] Error 1 (ignored)
