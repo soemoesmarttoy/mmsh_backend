@@ -11,9 +11,9 @@ default: &default
 
 development:
   <<: *default
-  database: mmsh_backend
-  username: root
-  password: SMT191289smt
+  database: <%= ENV["DATABASE_NAME"] %>
+  username: <%= ENV["DATABASE_USER"] %>
+  password: <%= ENV["DATABASE_PASSWORD"] %>
   host: localhost
   port: 3306
 
