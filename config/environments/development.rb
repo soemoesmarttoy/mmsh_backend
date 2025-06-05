@@ -24,6 +24,8 @@ Rails.application.configure do
   else
     config.action_controller.perform_caching = false
   end
+  config.hosts << "test100.mmsofthelp.com"
+  config.hosts << "www.test100.mmsofthelp.com"
 
   # Change to :null_store to avoid any caching.
   config.cache_store = :memory_store
