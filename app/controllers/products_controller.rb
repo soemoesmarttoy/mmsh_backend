@@ -6,6 +6,12 @@ class ProductsController < ApplicationController
 
     def create
     product = Product.new(product_params)
+    if product.pcode.present?
+        product.pcode = product.pcode.to_s.ljust(6, "0")
+    else
+        product.pcode = 999999
+    end
+
     if product.save
         render json: product, include: [ :categories ], status: :created
     else

@@ -12,6 +12,8 @@ Rails.application.routes.draw do
   post "customers", to: "customers#create"
   put "customers", to: "customers#update"
 
+  delete "pre_produces/delete(/:temp_id)", to: "pre_sells#delete"
+  get "pre_produces/withdrawn(/:temp_id/:new_temp_id)", to: "pre_sells#withdrawn"
   get "products/get-all-products", to: "products#get_all_products"
   get "users/get-emails", to: "users#get_emails"
   get "users/get-usernames", to: "users#get_usernames"

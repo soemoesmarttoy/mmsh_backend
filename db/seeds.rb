@@ -7,7 +7,7 @@ ActiveRecord::Base.transaction do
     end
 
     # Create Quality Categories
-    q_names = [ "dried", "wet", "normal", "color sorted", "single polished color sorted", "double polished color sorted" ]
+    q_names = [ "dried", "wet", "normal", "special", "color sorted", "single polished color sorted", "double polished color sorted" ]
     q_arr = q_names.map do |q|
       Category.create!(name: q, category_type: "quality")
     end
@@ -64,7 +64,7 @@ ActiveRecord::Base.transaction do
                   v,
                   u
                 ],
-                pcode: count1 + count2 + count3
+                pcode: (count1 + count2 + count3) * 100
               )
               puts "Created product #{p} #{count1 + count2 + count3} for Paddy: #{q}, #{v.name}, #{u.name}"
             end
@@ -114,7 +114,7 @@ ActiveRecord::Base.transaction do
                   v,
                   u
                 ],
-                pcode: count1 + count2 + count3 + count4
+                pcode: (count1 + count2 + count3 + count4) * 100
               )
               puts "Created product #{p} with #{count1+count2+count3+count4} for #{c}: #{q}, #{v.name}, #{u.name}"
             end
@@ -132,7 +132,7 @@ ActiveRecord::Base.transaction do
         v_arr.find { |v| v.name === "30" },
         u_arr.find { |u| u.name == "vs" }
       ],
-      pcode: 4001
+      pcode: 4001 * 100
     )
     Product.create!(
       name: "Small Rice",
@@ -142,7 +142,7 @@ ActiveRecord::Base.transaction do
         v_arr.find { |v| v.name === "30" },
         u_arr.find { |u| u.name == "vs" }
       ],
-      pcode: 4002
+      pcode: 4002 * 100
     )
     Product.create!(
       name: "Phwal Nu",
@@ -152,7 +152,7 @@ ActiveRecord::Base.transaction do
         twenty_cat,
         u_arr.find { |u| u.name == "vs" }
       ],
-      pcode: 5001
+      pcode: 5001 * 100
     )
     Product.create!(
       name: "Phwal Nu",
@@ -162,7 +162,7 @@ ActiveRecord::Base.transaction do
         twenty_cat,
         u_arr.find { |u| u.name == "vs" }
       ],
-      pcode: 5002
+      pcode: 5002 * 100
     )
     Product.create!(
       name: "Point",
@@ -172,7 +172,7 @@ ActiveRecord::Base.transaction do
         twenty_cat,
         u_arr.find { |u| u.name == "vs" }
       ],
-      pcode: 6001
+      pcode: 6001 * 100
     )
     Product.create!(
       name: "Point",
@@ -182,7 +182,7 @@ ActiveRecord::Base.transaction do
         twenty_cat,
         u_arr.find { |u| u.name == "vs" }
       ],
-      pcode: 6002
+      pcode: 6002 * 100
     )
     rejected_q = Category.create!(name: "reject", category_type: "quality")
     Product.create!(
@@ -193,7 +193,7 @@ ActiveRecord::Base.transaction do
         v_arr.find { |v| v.name === "30" },
         u_arr.find { |u| u.name == "vs" }
       ],
-      pcode: 7001
+      pcode: 7001 * 100
     )
     Product.create!(
       name: "Reject Medium Rice",
@@ -203,7 +203,7 @@ ActiveRecord::Base.transaction do
         v_arr.find { |v| v.name === "30" },
         u_arr.find { |u| u.name == "vs" }
       ],
-      pcode: 8001
+      pcode: 8001 * 100
     )
     incomes = [ "general", "rent_dried", "rent_produced" ]
     incomes.each do |i|
@@ -211,7 +211,7 @@ ActiveRecord::Base.transaction do
             name: i
         )
     end
-    expenses = [ "general", "transportation", "direct_labour_cost", "electricity", "fuel", "tax", "rent_for_buildings", "rent_for_machines", "give_rent", "salary" ]
+    expenses = [ "general", "direct_labour_cost", "transportation", "electricity", "fuel", "tax", "rent_for_buildings", "rent_for_machines", "give_rent", "salary" ]
     expenses.each do |e|
         ExpenseCategory.create!(
             name: e

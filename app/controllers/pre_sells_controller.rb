@@ -44,9 +44,6 @@ class PreSellsController < ApplicationController
       pre_sells = params[:pre_sell][:pre_sells]
       pre_sell = pre_sells.first
       selected_items = params[:pre_sell][:selectedItems]
-
-      Rails.logger.debug(pre_sell)
-
       ActiveRecord::Base.transaction do
         @order = Order.create!(
           order_type: "to_receive",
@@ -120,16 +117,15 @@ class PreSellsController < ApplicationController
       end
       render json: { messages: [ "success" ] }, status: :ok
     end
+
     def get_pre_produce
       temp_id = params[:temp_id]
-
-
       Rails.logger.debug(params)
       Rails.logger.debug(temp_id)
       if temp_id != nil
         pre_produces = PreProduce.where(temp_id: temp_id)
       else
-        pre_produces = PreProduce.where.not(pre_produce_status: "inactive")
+        pre_produces = PreProduce.where.not(pre_produce_status: [ "inactive", "withdrawn" ])
       end
       render json: pre_produces, status: :ok
     end
@@ -225,46 +221,21 @@ class PreSellsController < ApplicationController
         )
         pre_produces = params[:order][:preProduces]
         pre_produces.each do |pre|
-          @pre_produce = PreProduce.find_by(id: pre[:id])
-          @pre_produce.update(pre_produce_status: "inactive")
-
-          @p1 = Product.find_by(id: @pre_produce.product_id)
-          p_name = @p1.name
-
-          # Filter out the "wet" category
-          p_cats = @p1.categories.reject { |cat| cat.name == "wet" }
-
-          # Add the "dried" category
-          dried_cat = Category.find_by(name: "dried")
-          desired_cats = p_cats + [ dried_cat ]
-
-          # Find products with the same name
-          products_with_same_name = Product.where(name: p_name)
-
-          # Now select the one with the exact same categories (including dried, excluding wet)
-          @p2 = products_with_same_name.find do |product|
-            # Get category IDs (assuming `categories` is a has_many through association)
-            product_cat_ids = product.categories.pluck(:id).sort
-            desired_cat_ids = desired_cats.map(&:id).sort
-
-            product_cat_ids == desired_cat_ids
-          end
-          unless @p2
-            raise ActiveRecord::Rollback
-            render json: { messages: @p2.erorrs.full_messages }, status: :unprocessable_entity
-          end
-          @new_one = PreProduce.create!(
-            product_id: @p2.id,
-            customer_id: @pre_produce.customer_id,
-            temp_id: @pre_produce.temp_id,
-            qty: @pre_produce.qty,
-            in_out: "out",
-            pre_produce_type: @pre_produce.pre_produce_type,
-            pre_produce_status: "active"
-          )
-          unless @pre_produce.save
-            raise ActiveRecord::Rollback
-            render json: { messages: @pre_produce.erorrs.full_messages }, status: :unprocessable_entity
+          if pre[:in_out] == "out"
+            @pre_produce = PreProduce.find_by(id: pre[:id])
+            @pre_produce.update(pre_produce_status: "inactive")
+          else
+            @pre_produce = PreProduce.find_by(id: pre[:id])
+            @pre_produce.update(pre_produce_status: "inactive")
+            PreProduce.create!(
+              customer_id: @pre_produce.customer_id,
+              product_id: @pre_produce.product_id,
+              pre_produce_type: "rent",
+              pre_produce_status: "active",
+              qty: @pre_produce.qty,
+              temp_id: params[:order][:new_temp_id],
+              in_out: "out",
+            )
           end
         end
       end
@@ -313,7 +284,35 @@ class PreSellsController < ApplicationController
       end
     end
 
+    def delete
+      id = params[:temp_id]
+      @pre_produces = PreProduce.where(temp_id: id)
+      @pre_produces.each do |p|
+        p.delete
+      end
+      render json: { success: true }
+    end
+    def withdrawn
+      id = params[:temp_id]
+      temp_id = params[:new_temp_id]
+      @pre_produces = PreProduce.where(temp_id: id)
+      @pre_produces.each do |pre_produce|
+        pre_produce.update(pre_produce_status: "inactive")
+        PreProduce.create!(
+          customer_id: pre_produce.customer_id,
+          product_id: pre_produce.product_id,
+          pre_produce_type: "rent",
+          pre_produce_status: "withdrawn",
+          qty: pre_produce.qty,
+          temp_id: temp_id,
+          in_out: "out",
+        )
+      end
+      render json: { success: true }, status: :ok
+    end
+
     private
+
 
     def items_params
       params.require(:items).map do |item|
