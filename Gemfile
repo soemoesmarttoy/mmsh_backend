@@ -63,7 +63,7 @@ end
 
 gem "mysql2", "~> 0.5.6"
 
-gem "rack-cors", "~> 2.0"
+gem "rack-cors", "~> 3.0"
 
 gem "ruby-units", "~> 4.1"
 
