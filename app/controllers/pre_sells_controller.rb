@@ -310,6 +310,21 @@ class PreSellsController < ApplicationController
       end
       render json: { success: true }, status: :ok
     end
+    def delete_pre_sell
+      @pre_sell = PreSell.find_by(id: params[:id])
+      unless @pre_sell.destroy
+        render json: { messages: "failed" }
+      end
+      render json: { messages: "success" }
+    end
+
+    def delete_pre_produce
+      @pre_produce = PreProduce.where(temp_id: params[:temp_id])
+      unless @pre_produce.destroy_all
+        render json: { messages: "failed" }
+      end
+      render json: { messages: "success" }
+    end
 
     private
 

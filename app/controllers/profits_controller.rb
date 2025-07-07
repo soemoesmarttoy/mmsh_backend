@@ -1,12 +1,9 @@
 class ProfitsController < ApplicationController
-
     def get_profits
         from = params[:from]
         to = params[:to]
-        Rails.logger.debug(from)
-        Rails.logger.debug(to)
         sell_orders = Order.where(created_at: from..to)
-                    .where(order_type: 'to_receive')
+                    .where(order_type: "to_receive")
         sell_total = sell_orders.sum(:total_amount)
         sell_orders = sell_orders.includes(items: :parents)
         cogs_total = 0
@@ -18,10 +15,10 @@ class ProfitsController < ApplicationController
             end
         end
         expense = Order.where(created_at: from..to)
-                    .where(order_type: 'spent')
+                    .where(order_type: "spent")
         expense_total = expense.sum(:total_amount)
         income = Order.where(created_at: from..to)
-                    .where(order_type: 'earned')
+                    .where(order_type: "earned")
         income_total = income.sum(:total_amount)
         to1 = DateTime.parse(to)
         from1 = DateTime.parse(from)
@@ -37,11 +34,11 @@ class ProfitsController < ApplicationController
         cash_total = orders.where(in_out: "in").sum(:last_total)
         inv_total =  Item.where(in_out: "in").sum(Arel.sql("last_qty * price"))
         rec_total = Order.where(created_at: ..end_of_day)
-                        .where(order_type: 'to_receive').sum(:last_total)
+                        .where(order_type: "to_receive").sum(:last_total)
         pay_total = Order.where(created_at: ..end_of_day)
-                        .where(order_type: 'to_pay').sum(:last_total)
+                        .where(order_type: "to_pay").sum(:last_total)
         sell_orders_from = Order.where(created_at: ..start_of_day)
-                            .where(order_type: 'to_receive')
+                            .where(order_type: "to_receive")
         sell_orders_total_from = sell_orders_from.sum(:total_amount)
         cogs_total_from = 0
         sell_orders_from.each do |order_from|
@@ -52,12 +49,12 @@ class ProfitsController < ApplicationController
             end
         end
         expense_total_from = Order.where(created_at: ..start_of_day)
-                    .where(order_type: 'spent').sum(:total_amount)
+                    .where(order_type: "spent").sum(:total_amount)
         income_total_from = Order.where(created_at: ..start_of_day)
-                    .where(order_type: 'earned').sum(:total_amount)
+                    .where(order_type: "earned").sum(:total_amount)
         net_profit_from = BigDecimal(sell_orders_total_from.to_s) - cogs_total_from - BigDecimal(expense_total_from.to_s) + BigDecimal(income_total_from.to_s)
-        item_in_before = Item.where(created_at: ..start_of_day).where(in_out: 'in')
-        item_out_before = Item.where(created_at: ..start_of_day).where(in_out: 'out')
+        item_in_before = Item.where(created_at: ..start_of_day).where(in_out: "in")
+        item_out_before = Item.where(created_at: ..start_of_day).where(in_out: "out")
         out_total_before = BigDecimal("0")
         in_total_before = BigDecimal("0")
         item_out_before.each do |item|
@@ -74,8 +71,8 @@ class ProfitsController < ApplicationController
             in_total_before += BigDecimal(item.price.to_s) * BigDecimal(item.qty.to_s)
         end
         inv_before = in_total_before - out_total_before
-        item_in_after = Item.where(created_at: ..end_of_day).where(in_out: 'in')
-        item_out_after = Item.where(created_at: ..end_of_day).where(in_out: 'out')
+        item_in_after = Item.where(created_at: ..end_of_day).where(in_out: "in")
+        item_out_after = Item.where(created_at: ..end_of_day).where(in_out: "out")
 
         out_total_after = BigDecimal("0")
         in_total_after = BigDecimal("0")
@@ -93,7 +90,7 @@ class ProfitsController < ApplicationController
             in_total_after += BigDecimal(item.price.to_s) * BigDecimal(item.qty.to_s)
         end
         inv_after = in_total_after - out_total_after
-        sell_cogs = Item.where(created_at: start_of_day..end_of_day).where(item_type: 'sell');
+        sell_cogs = Item.where(created_at: start_of_day..end_of_day).where(item_type: "sell")
         cogs_sold = 0
         sell_cogs.each do |sell1|
             items = ItemRelationship.where(child_item_id: sell1.id)
@@ -102,14 +99,19 @@ class ProfitsController < ApplicationController
             end
         end
         increase_inv = inv_after - inv_before
-        increase_rec = Order.where(created_at: start_of_day..end_of_day).where(order_type: 'to_receive').sum('total_amount')
-                        - Order.where(created_at: start_of_day..end_of_day).where(order_type: 'received').sum('total_amount')
-        increase_pay = Order.where(created_at: start_of_day..end_of_day).where(order_type: 'to_pay').sum('total_amount') -
-                        Order.where(created_at: start_of_day..end_of_day).where(order_type: 'paid').sum('total_amount')
-
+        a = Order.where(created_at: start_of_day..end_of_day).where(order_type: "to_receive").sum("total_amount")
+        b = Order.where(created_at: start_of_day..end_of_day).where(order_type: "prepaid").sum("total_amount")
+        c = Order.where(created_at: start_of_day..end_of_day).where(order_type: "tr_received").sum("total_amount")
+        d = Order.where(created_at: start_of_day..end_of_day).where(order_type: "pp_received").sum("total_amount")
+        increase_rec = a + b - c - d
+        d = Order.where(created_at: start_of_day..end_of_day).where(order_type: "to_pay").sum("total_amount")
+        e = Order.where(created_at: start_of_day..end_of_day).where(order_type: "prereceived", in_out: "not_applicable").sum("total_amount")
+        f = Order.where(created_at: start_of_day..end_of_day).where(order_type: "tp_paid").sum("total_amount")
+        g = Order.where(created_at: start_of_day..end_of_day).where(order_type: "pr_paid").sum("total_amount")
+        increase_pay = d + e - f - g
         net_profit = BigDecimal(sell_total.to_s) - cogs_total - BigDecimal(expense_total.to_s)+ BigDecimal(income_total.to_s)
-        sell_all_before = Order.where(created_at: ..start_of_day).where(order_type: 'to_receive')
-        sell_all_total_before = sell_all_before.sum('total_amount')
+        sell_all_before = Order.where(created_at: ..start_of_day).where(order_type: "to_receive")
+        sell_all_total_before = sell_all_before.sum("total_amount")
         sell_all_cogs_before = 0
         sell_all_before.each do |order_all|
             order_all.items.each do |item_all|
@@ -118,24 +120,24 @@ class ProfitsController < ApplicationController
                 end
             end
         end
-        order_from = Order.where(created_at: ..start_of_day);
-        equity_total_before = order_from.where(order_type: 'cash_added').sum('total_amount')
-                                - order_from.where(order_type: 'cash_withdrawn').sum('total_amount')
+        order_from = Order.where(created_at: ..start_of_day)
+        equity_total_before = order_from.where(order_type: "cash_added").sum("total_amount")
+                                - order_from.where(order_type: "cash_withdrawn").sum("total_amount")
 
-        equity_total_after = Order.where(created_at: ..end_of_day).where(order_type: 'cash_added').sum('total_amount')
-                            - Order.where(created_at: ..end_of_day).where(order_type: 'cash_withdrawn').sum('total_amount')
+        equity_total_after = Order.where(created_at: ..end_of_day).where(order_type: "cash_added").sum("total_amount")
+                            - Order.where(created_at: ..end_of_day).where(order_type: "cash_withdrawn").sum("total_amount")
         increase_equity = equity_total_after - equity_total_before
         cal_cash_before =
             Order.where(created_at: ..start_of_day)
-                .where.not(in_out: 'cash_added')
-                .where(in_out: 'in')
+                .where.not(in_out: "cash_added")
+                .where(in_out: "in")
                 .sum(:total_amount) -
             Order.where(created_at: ..start_of_day)
-                .where.not(in_out: 'cash_withdrawn')
-                .where(in_out: 'out')
+                .where.not(in_out: "cash_withdrawn")
+                .where(in_out: "out")
                 .sum(:total_amount)
 
-        orders = Order.where(created_at: ..start_of_day);
+        orders = Order.where(created_at: ..start_of_day)
 
         cal_cash = sell_total - cogs_total + income_total - expense_total + BigDecimal(cal_cash_before) + BigDecimal(increase_equity) - increase_inv + BigDecimal(increase_pay) - BigDecimal(increase_rec)
         render json: {

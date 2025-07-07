@@ -22,6 +22,9 @@ class UsersController < ApplicationController
             password: params[:password],
             role: params[:role],
         )
+        Customer.create!(
+            name: params[:username]
+        )
         render json: { messages: "success" }, status: :ok
     end
 

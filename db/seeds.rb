@@ -217,12 +217,16 @@ ActiveRecord::Base.transaction do
             name: e
         )
     end
-    users = [ "admin", "user", "buyer", "seller", "producer", "cashier" ]
+    users = [ "admin", "user", "buyer", "seller", "producer", "cashier", "main" ]
     users.each do |user|
       User.create!(
         username: user,
+        email: user + '@gmail.com',
         password: user,
         role: user
+      )
+      Customer.create!(
+        name: user
       )
     end
   end

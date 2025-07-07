@@ -1,7 +1,6 @@
 class Item < ApplicationRecord
   attr_accessor :total
-  attr_accessor :yield
-  attr_accessor :parents
+  attr_accessor :custom_yield
   belongs_to :product
   belongs_to :order
   has_many :child_relationships, class_name: "ItemRelationship", foreign_key: :parent_item_id, dependent: :destroy

@@ -48,7 +48,6 @@ class ReportsController < ApplicationController
             end
             end
 
-            # Second pass: assign yields
             o.items.each do |i|
             p = i.product
             var = 1.0
@@ -62,7 +61,7 @@ class ReportsController < ApplicationController
             qty = i.qty.to_f * var
             qty_in_viss = convert_to_viss(qty, unit) / 30.0
 
-            i.yield = if i.in_out == "in"
+            i.custom_yield = if i.in_out == "in"
                 total_in > 0 ? (qty_in_viss / total_out).round(4) : 0
             else
                 total_in_one = total_in / 30.0
@@ -74,7 +73,7 @@ class ReportsController < ApplicationController
         render json: @orders.as_json(include: {
             customer: {},
             items: {
-            methods: [ :yield ],
+            methods: [ :custom_yield ],
             include: { product: {} }
             }
         }), status: :ok

@@ -68,3 +68,5 @@ gem "rack-cors", "~> 2.0"
 gem "ruby-units", "~> 4.1"
 
 gem "dotenv", "~> 3.1"
+
+gem "sqlite3", "~> 2.7"

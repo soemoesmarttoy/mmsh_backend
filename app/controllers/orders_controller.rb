@@ -8,17 +8,13 @@ class OrdersController < ApplicationController
       order = Order.includes(:customer, items: { product: [ :categories ] }).find_by(id: params[:order_id])
 
       if order
-        order.items.each do |item|
-          rs = ItemRelationship.where(child_item_id: item.id)
-          item.parents = rs
-        end
-
         render json: order.as_json(
           include: {
             customer: {},
             items: {
               include: {
-                product: { include: :categories }
+                product: { include: :categories },
+                parents: []
               },
               methods: [ :parents ] # 👈 this includes your dynamic attribute
             }
@@ -96,12 +92,18 @@ class OrdersController < ApplicationController
       end
     end
     def get_to_pay_orders
-      orders = Order.includes(:customer).where(order_type: "to_pay").where("last_total > 0")
-      render json: orders.as_json(include: { customer: {} })
+      orders = Order.includes(:customer, :items).where(order_type: "to_pay").where("last_total > 0")
+      orders += Order.includes(:customer).where(order_type: "prereceived", in_out: "not_applicable").where("last_total > 0")
+      render json: orders.as_json(include: { customer: {}, items: {} })
     end
     def get_to_receive_orders
-      orders = Order.includes(:customer).where(order_type: "to_receive").where("last_total > 0")
-      render json: orders.as_json(include: { customer: {} })
+      orders = Order.includes([ :customer, :items ]).where(order_type: [ "to_receive", "prepaid" ]).where("last_total > 0")
+      render json: orders.as_json(include: { customer: {}, items: {} })
+    end
+
+    def get_pre_paid_orders
+      orders = Order.includes(:customer).where(order_type: "prepaid").where("last_total > 0")
+      render json: order.as_json(include: { customer: {} })
     end
 
     def settle_to_pay
@@ -136,19 +138,27 @@ class OrdersController < ApplicationController
             render json: { erorrs: child.erorrs.full_messages }, status: :unprocessable_entity
             raise ActiveRecord::Rollback
           end
-          if p[:settledAmt].to_f > child[:last_total].to_f
+          if p[:settledAmt].to_f > child.last_total.to_f
             render json: { erorrs: "settled amt > actaul amt" }, status: :unprocessable_entity
             raise ActiveRecord::Rollback
           end
-          child.last_total -= p[:settledAmt].to_f
+          child.last_total -= p[:settledAmt].to_d
           unless child.last_total >= 0 && child.save
             render json: { erorrs: "actual amt < 0" }, status: :unprocessable_entity
             raise ActiveRecord::Rollback
           end
+          order_type = ""
+          if child.order_type.strip == "to_pay"
+            order_type = "tp_paid"
+          elsif child.order_type.strip == "prereceived"
+            order_type = "pr_paid"
+          else
+            order_type = "paid"
+          end
           @order = Order.create!(
             customer_id: child.customer_id,
             total_amount: p[:settledAmt].to_f,
-            order_type: "paid",
+            order_type: order_type,
             in_out: "out",
             last_total: 0
           )
@@ -164,6 +174,65 @@ class OrdersController < ApplicationController
           )
         end
         render json: { messages: "success" }, status: :ok
+      end
+    end
+    def settle_to_receive_by_to_pay
+      ActiveRecord::Base.transaction do
+        to_pay_orders = params[:order][:to_pay_orders]
+        Rails.logger.debug(to_pay_orders)
+        total_to_apply = to_pay_orders.sum { |tp| tp[:settledAmt].to_f }
+        Rails.logger.debug(total_to_apply)
+
+        child_orders_params = params[:order][:child_orders]
+        remaining = total_to_apply
+        created_in_orders = []
+
+        child_orders_params.each do |child_param|
+          break if remaining <= 0
+
+          child = Order.find_by(id: child_param[:id])
+          unless child
+            render json: { errors: [ "Child order not found" ] }, status: :unprocessable_entity
+            raise ActiveRecord::Rollback
+          end
+
+          delta = [ child.last_total, remaining ].min
+          child.last_total -= delta
+          unless child.save
+            render json: { errors: child.errors.full_messages }, status: :unprocessable_entity
+            raise ActiveRecord::Rollback
+          end
+
+          in_type = child.order_type == "to_receive" ? "tr_received" : "pp_received"
+          parent = Order.create!(
+            customer_id: params[:order][:customer_id],
+            total_amount: delta,
+            order_type: in_type,
+            in_out: "in",
+            last_total: delta
+          )
+          created_in_orders << parent
+          OrderRelationship.create!(child_order: parent, parent_order: child)
+
+          remaining -= delta
+        end
+
+        created_in_orders.each do |in_order|
+          to_pay_orders.each do |tp|
+            break if in_order.last_total <= 0
+
+            tp_order = Order.find(tp[:id])
+            allocation = [ in_order.last_total, tp_order.last_total ].min
+            tp_order.update!(last_total: tp_order.last_total - allocation)
+            in_order.update!(last_total: in_order.last_total - allocation)
+            OrderRelationship.create!(
+              parent_order: in_order,
+              child_order: tp_order
+            )
+          end
+        end
+
+        render json: { message: "success" }, status: :ok
       end
     end
     def settle_to_receive
@@ -182,10 +251,15 @@ class OrdersController < ApplicationController
             render json: { errors: @child.errors.full_messages }, status: :unprocessable_entity
             raise ActiveRecord::Rollback
           end
+          if @child.order_type == "to_receive"
+            order_type = "tr_received"
+          else
+            order_type = "pp_received"
+          end
           @parent = Order.create!(
             customer_id: params[:order][:customer_id],
             total_amount: balance,
-            order_type: "received",
+            order_type: order_type,
             in_out: "in",
             last_total: balance,
           )
@@ -194,8 +268,8 @@ class OrdersController < ApplicationController
             raise ActiveRecord::Rollback
           end
           OrderRelationship.create!(
-            parent_order: @parent,
-            child_order: @child
+            child_order: @parent,
+            parent_order: @child
           )
           remaining_to_deduct -= balance
         end
@@ -205,6 +279,74 @@ class OrdersController < ApplicationController
         end
         render json: { messages: "success" }, status: :ok
       end
+    end
+    def create_pre_paid
+      ActiveRecord::Base.transaction do
+        @order = Order.new(order_params.except(:parent_order_ids))
+        @parent_orders = Order.where(id: params[:order][:parent_order_ids])
+        @new_parents = []
+        if @parent_orders.length > 0
+          to_reduce_qty = order_params[:total_amount].to_d
+          @parent_orders.each do |p|
+            if to_reduce_qty > 0
+              amt = [ p.last_total, to_reduce_qty ].min
+              to_reduce_qty -= amt
+              p.last_total -= amt
+              @new_parents.push(p)
+              unless p.last_total <= p.total_amount && p.save
+                ActiveRecord::Rollback
+                render json: { messages: "failed" }
+                return
+              end
+            end
+          end
+          if to_reduce_qty > 0
+            ActiveRecord::Rollback
+            render json: { messages: "failed" }
+            return
+          end
+          customer = @order.customer
+          user = User.find_by(username: customer.name)
+          if user
+            @order.order_type = "cash_withdrawn"
+          else
+            @order.order_type = "prepaid"
+            @order.in_out = "out"
+          end
+          @order.save
+          @new_parents.each do |p|
+            OrderRelationship.create!(
+              parent_order: p,
+              child_order: @order
+            )
+          end
+          render json: { messages: "success" }
+        else
+          render json: { messages: "failed" }
+          return
+        end
+      end
+    end
+    def create_pre_received
+      @order = Order.new(order_params)
+      @order.save
+      @customer = Customer.find_by(name: params[:username])
+      @user = User.find_by(username: @order.customer.name)
+      if !@user
+        @new_order = Order.new(
+          order_type: "prereceived",
+          customer_id: @customer[:id],
+          total_amount: @order.total_amount,
+          in_out: "in",
+          last_total: @order.total_amount,
+        )
+        @new_order.save
+        OrderRelationship.create(
+          parent_order_id: @order.id,
+          child_order_id: @new_order.id
+        )
+      end
+      render json: { messages: "success" }
     end
     def create
       ActiveRecord::Base.transaction do
