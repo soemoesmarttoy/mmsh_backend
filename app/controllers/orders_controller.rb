@@ -380,7 +380,7 @@ class OrdersController < ApplicationController
           remaining_qty = item.last_qty.to_f
           total += BigDecimal(item.last_qty.to_s) * BigDecimal(item.price.to_s)
           parent_item_ids.each do |pid|
-            parent_item = Item.find_by(id: pid)
+            parent_item = Item.find_by(id: pid[:id])
             next unless parent_item && parent_item.last_qty.to_f > 0
             parent_last_qty = parent_item.last_qty.to_f
             parent_qty = parent_item.qty.to_f

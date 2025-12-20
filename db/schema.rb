@@ -11,49 +11,52 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[8.0].define(version: 2025_05_27_062643) do
-  create_table "categories", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_catalog.plpgsql"
+
+  create_table "categories", force: :cascade do |t|
     t.string "name"
     t.string "category_type"
   end
 
-  create_table "categories_products", id: false, charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "categories_products", id: false, force: :cascade do |t|
     t.bigint "category_id", null: false
     t.bigint "product_id", null: false
     t.index ["category_id"], name: "index_categories_products_on_category_id"
     t.index ["product_id"], name: "index_categories_products_on_product_id"
   end
 
-  create_table "customers", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "customers", force: :cascade do |t|
     t.string "name"
   end
 
-  create_table "expense_categories", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "expense_categories", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "expense_categories_orders", id: false, charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "expense_categories_orders", id: false, force: :cascade do |t|
     t.bigint "order_id", null: false
     t.bigint "expense_category_id", null: false
     t.index ["expense_category_id", "order_id"], name: "idx_on_expense_category_id_order_id_684197d5e0"
     t.index ["order_id", "expense_category_id"], name: "idx_on_order_id_expense_category_id_7da4263370"
   end
 
-  create_table "income_categories", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "income_categories", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "income_categories_orders", id: false, charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "income_categories_orders", id: false, force: :cascade do |t|
     t.bigint "order_id", null: false
     t.bigint "income_category_id", null: false
     t.index ["income_category_id", "order_id"], name: "idx_on_income_category_id_order_id_809bc7623e"
     t.index ["order_id", "income_category_id"], name: "idx_on_order_id_income_category_id_7a14108cce"
   end
 
-  create_table "item_relationships", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "item_relationships", force: :cascade do |t|
     t.bigint "parent_item_id", null: false
     t.bigint "child_item_id", null: false
     t.datetime "created_at", null: false
@@ -64,7 +67,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_27_062643) do
     t.index ["parent_item_id"], name: "index_item_relationships_on_parent_item_id"
   end
 
-  create_table "items", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "items", force: :cascade do |t|
     t.bigint "product_id", null: false
     t.decimal "price", precision: 25, scale: 10
     t.decimal "qty", precision: 25, scale: 10
@@ -78,7 +81,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_27_062643) do
     t.index ["product_id"], name: "index_items_on_product_id"
   end
 
-  create_table "order_relationships", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "order_relationships", force: :cascade do |t|
     t.bigint "parent_order_id", null: false
     t.bigint "child_order_id", null: false
     t.datetime "created_at", null: false
@@ -87,7 +90,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_27_062643) do
     t.index ["parent_order_id"], name: "index_order_relationships_on_parent_order_id"
   end
 
-  create_table "orders", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "orders", force: :cascade do |t|
     t.string "order_type"
     t.bigint "customer_id"
     t.string "in_out"
@@ -98,7 +101,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_27_062643) do
     t.index ["customer_id"], name: "index_orders_on_customer_id"
   end
 
-  create_table "pre_produces", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "pre_produces", force: :cascade do |t|
     t.bigint "customer_id"
     t.bigint "product_id", null: false
     t.string "pre_produce_type"
@@ -112,7 +115,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_27_062643) do
     t.index ["product_id"], name: "index_pre_produces_on_product_id"
   end
 
-  create_table "pre_sells", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "pre_sells", force: :cascade do |t|
     t.bigint "customer_id"
     t.decimal "total_amount", precision: 25, scale: 10
     t.decimal "qty", precision: 25, scale: 10
@@ -124,12 +127,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_27_062643) do
     t.index ["product_id"], name: "index_pre_sells_on_product_id"
   end
 
-  create_table "products", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "products", force: :cascade do |t|
     t.string "name"
     t.bigint "pcode"
   end
 
-  create_table "users", charset: "utf8mb4", collation: "utf8mb4_uca1400_ai_ci", force: :cascade do |t|
+  create_table "users", force: :cascade do |t|
     t.string "username"
     t.string "email"
     t.string "password"

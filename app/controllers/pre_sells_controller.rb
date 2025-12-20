@@ -201,6 +201,81 @@ class PreSellsController < ApplicationController
       end
     end
 
+def withdrawn_list
+  pre_sells = PreProduce
+    .includes(:customer, product: :categories)
+    .where(pre_produce_status: "withdrawn")
+    .order(updated_at: :desc)
+    .limit(500)
+
+  # 1. First Pass: Calculate Batch Totals
+  batch_metrics = {}
+  pre_sells.group_by(&:temp_id).each do |temp_id, items|
+    t_in = 0.0
+    t_out_normalized = 0.0
+
+    items.each do |i|
+      # Extract variation and unit
+      v = i.product.categories.find { |c| c.category_type == "variation" }&.name.to_f || 1.0
+      u = i.product.categories.find { |c| c.category_type == "unit" }&.name || ""
+      
+      if i.in_out == "out"
+        t_in += i.qty.to_f
+      else
+        # Formula: (Qty * Variation / 30)
+        t_out_normalized += (i.qty.to_f * v) / 30.0
+      end
+    end
+
+    batch_metrics[temp_id] = { 
+      total_in: t_in, 
+      total_out_norm: t_out_normalized,
+      batch_yield: t_in > 0 ? (t_out_normalized / t_in * 100).round(2) : 0
+    }
+  end
+
+  # 2. Second Pass: Format each row
+  formatted_results = pre_sells.map do |item|
+    metrics = batch_metrics[item.temp_id]
+    
+    # Calculate this specific item's normalized value
+    item_v = item.product.categories.find { |c| c.category_type == "variation" }&.name.to_f || 1.0
+    item_norm = (item.qty.to_f * item_v) / 30.0
+
+    # Apply specific logic per row type
+    display_yield = 0.0
+    if metrics[:total_in] > 0
+      if item.in_out == "out"
+        # Paddy Row -> Show the Total Batch Yield (Total Out Norm / Total In)
+        display_yield = metrics[:batch_yield]
+      else
+        # Out Row -> Show Item Share (This Item Norm / Total In)
+        display_yield = (item_norm / metrics[:total_in] * 100).round(2)
+      end
+    end
+
+    item.as_json(include: { customer: {}, product: { include: :categories } }).merge({
+      "calculated_yield" => display_yield,
+      "batch_total_in" => metrics[:total_in],
+      "batch_total_out_norm" => metrics[:total_out_norm]
+    })
+  end
+
+  render json: formatted_results, status: :ok
+end
+    private
+
+    # Helper to handle the repetition of category/viss logic
+    def calc_viss(item)
+      variation = 1.0
+      unit_name = ""
+      item.product.categories.each do |cat|
+        variation *= cat.name.to_f if cat.category_type == "variation"
+        unit_name = cat.name if cat.category_type == "unit"
+      end
+      convert_to_viss(item.qty.to_f * variation, unit_name)
+    end
+
     def rent_dried_collect
       ActiveRecord::Base.transaction do
         amt = params[:order][:total_amount].to_f
@@ -305,7 +380,7 @@ class PreSellsController < ApplicationController
           pre_produce_status: "withdrawn",
           qty: pre_produce.qty,
           temp_id: temp_id,
-          in_out: "out",
+          in_out: pre_produce.in_out,
         )
       end
       render json: { success: true }, status: :ok
@@ -348,5 +423,16 @@ class PreSellsController < ApplicationController
         :total_amount, :in_out, :customer_id, :order_type, :last_total,
         items_attributes: permitted_items
       )
+    end
+    
+    require "ruby-units"
+    def convert_to_viss(qty, unit)
+        return qty if ![ "mcg", "mg", "g", "kg", "mt", "oz", "lb", "t" ].include?(unit.downcase)
+            begin
+                kg = Unit("#{qty} #{unit}").to("kg").scalar
+                kg / 0.612
+            rescue
+                0
+        end
     end
 end

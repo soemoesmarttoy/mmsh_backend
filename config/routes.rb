@@ -18,6 +18,7 @@ Rails.application.routes.draw do
   delete "delete-orders/delete-production(/:id)", to: "delete_orders#delete_production"
   delete "delete-orders/delete-buy(/:id)", to: "delete_orders#delete_buy"
   delete "pre_produces/delete(/:temp_id)", to: "pre_sells#delete_pre_produce"
+  get "pre_produces/withdrawnList", to: "pre_sells#withdrawn_list"
   get "pre_produces/withdrawn(/:temp_id/:new_temp_id)", to: "pre_sells#withdrawn"
   get "products/get-all-products", to: "products#get_all_products"
   get "users/get-emails", to: "users#get_emails"

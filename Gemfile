@@ -61,7 +61,7 @@ group :test do
   gem "selenium-webdriver"
 end
 
-gem "mysql2", "~> 0.5.6"
+gem 'pg', '~> 1.5', '>= 1.5.9'
 
 gem "rack-cors", "~> 2.0"
 

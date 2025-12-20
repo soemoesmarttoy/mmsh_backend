@@ -1,7 +1,7 @@
 default: &default
-  adapter: mysql2
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  timeout: 5000
+  adapter: postgresql  # This tells Rails to use the 'pg' gem
+  encoding: unicode
+  pool: 5
 
 development:
   <<: *default
@@ -9,7 +9,7 @@ development:
   username: <%= ENV["DATABASE_USER"] %>
   password: <%= ENV["DATABASE_PASSWORD"] %>
   host: localhost
-  port: 3306
+  port: 5432
 
 test:
   <<: *default
@@ -17,7 +17,7 @@ test:
   username: <%= ENV["DATABASE_USER"] %>
   password: <%= ENV["DATABASE_PASSWORD"] %>
   host: localhost
-  port: 3306
+  port: 5432 
 
 production:
   adapter: sqlite3
